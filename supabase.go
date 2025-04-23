@@ -7,14 +7,15 @@ import (
 	"net/url"
 	"time"
 
-	postgrest "github.com/nedpals/supabase-go/postgrest/pkg"
+	postgrest "github.com/the-muppet/supabase-go/postgrest/pkg"
 )
 
 const (
-	AuthEndpoint    = "auth/v1"
-	AdminEndpoint   = "auth/v1/admin"
-	RestEndpoint    = "rest/v1"
-	StorageEndpoint = "storage/v1"
+	AuthEndpoint     = "auth/v1"
+	AdminEndpoint    = "auth/v1/admin"
+	RestEndpoint     = "rest/v1"
+	StorageEndpoint  = "storage/v1"
+	RealtimeEndpoint = "realtime/v1"
 )
 
 type Client struct {
@@ -26,6 +27,7 @@ type Client struct {
 	Auth       *Auth
 	Storage    *Storage
 	DB         *postgrest.Client
+	Realtime   *Realtime
 }
 
 type ErrorResponse struct {
@@ -44,11 +46,12 @@ func CreateClient(baseURL string, supabaseKey string, debug ...bool) *Client {
 		panic(err)
 	}
 	client := &Client{
-		BaseURL: baseURL,
-		apiKey:  supabaseKey,
-		Admin:   &Admin{},
-		Auth:    &Auth{},
-		Storage: &Storage{},
+		BaseURL:  baseURL,
+		apiKey:   supabaseKey,
+		Admin:    &Admin{},
+		Auth:     &Auth{},
+		Storage:  &Storage{},
+		Realtime: &Realtime{},
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
 		},
@@ -64,10 +67,12 @@ func CreateClient(baseURL string, supabaseKey string, debug ...bool) *Client {
 			},
 		),
 	}
+
 	client.Admin.client = client
 	client.Admin.serviceKey = supabaseKey
 	client.Auth.client = client
 	client.Storage.client = client
+	client.Realtime.client = client
 	return client
 }
 

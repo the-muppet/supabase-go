@@ -1,13 +1,12 @@
-> **This project is looking for a new home.**  See the [issue](https://github.com/nedpals/supabase-go/issues/67) for details.
-
 # supabase-go
+
+> **This fork adds Realtime support to the original repository.** The original project was [looking for a new home](https://github.com/nedpals/supabase-go/issues/67).
 
 Unofficial [Supabase](https://supabase.io) client for Go. It is an amalgamation of all the libraries similar to the [official Supabase client](https://supabase.io/docs/reference/javascript/supabase-client).
 
 ## Installation
-
 ```
-go get github.com/nedpals/supabase-go
+go get github.com/the-muppet/supabase-go
 ```
 
 ## Usage
@@ -19,9 +18,10 @@ Replace the `<SUPABASE-URL>` and `<SUPABASE-KEY>` placeholders with values from 
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
     "fmt"
     "context"
+    
+    supa "github.com/the-muppet/supabase-go"
 )
 
 func main() {
@@ -47,9 +47,10 @@ func main() {
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
     "fmt"
     "context"
+    
+    supa "github.com/the-muppet/supabase-go"
 )
 
 func main() {
@@ -75,8 +76,9 @@ func main() {
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
     "fmt"
+    
+    supa "github.com/the-muppet/supabase-go"
 )
 
 type Country struct {
@@ -111,8 +113,9 @@ func main() {
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
     "fmt"
+    
+    supa "github.com/the-muppet/supabase-go"
 )
 
 func main() {
@@ -135,8 +138,9 @@ func main() {
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
     "fmt"
+    
+    supa "github.com/the-muppet/supabase-go"
 )
 
 type Country struct {
@@ -169,8 +173,10 @@ func main() {
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
+    
     "fmt"
+
+    supa "github.com/the-muppet/supabase-go"
 )
 
 func main() {
@@ -193,9 +199,11 @@ func main() {
 ```go
 package main
 import (
-    supa "github.com/nedpals/supabase-go"
+    
     "fmt"
     "context"
+
+    supa "github.com/the-muppet/supabase-go"
 )
 
 func main() {
@@ -221,33 +229,247 @@ func main() {
 }
 ```
 
+### Subscribing to Database Changes
+
+```go
+package main
+
+import (
+   
+    "fmt"
+
+    supa "github.com/the-muppet/supabase-go"
+)
+
+func main() {
+    supabaseUrl := "<SUPABASE-URL>"
+    supabaseKey := "<SUPABASE-KEY>"
+    supabase := supa.CreateClient(supabaseUrl, supabaseKey)
+
+    channel := supabase.Channel("db-changes")
+    
+    channel.SubscribeToPostgresChanges([]supa.PostgresChange{
+        {
+            Event:  "*",       // Listen to all events (INSERT, UPDATE, DELETE)
+            Schema: "public",  // Schema name
+            Table:  "todos",   // Table name
+        },
+    })
+
+    // Listen for changes
+    err := channel.Subscribe(func(message supa.Message) {
+        fmt.Println("Received message:", message)
+        
+        // Extract data from the payload
+        payload, ok := message.Payload["record"].(map[string]interface{})
+        if ok {
+            fmt.Println("Changed record:", payload)
+        }
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    // Connect to the Realtime server
+    err = supabase.ConnectRealtime()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Join the channel
+    err = channel.Join()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Wait for changes
+    select {}
+}
+```
+
+### Using Presence to Track Online Users
+
+```go
+package main
+
+import (
+    "fmt"
+
+    supa "github.com/the-muppet/supabase-go"
+)
+
+func main() {
+    supabaseUrl := "<SUPABASE-URL>"
+    supabaseKey := "<SUPABASE-KEY>"
+    supabase := supa.CreateClient(supabaseUrl, supabaseKey)
+    
+    channel := supabase.Channel("room:lobby")
+    
+    // Subscribe to presence
+    channel.SubscribeToPresence("user-123")
+    
+    // Subscribe to presence changes
+    err := channel.SubscribeToEvent("presence_state", func(message supa.Message) {
+        fmt.Println("Presence state:", message.Payload)
+        
+        // Get the current presence state
+        state := channel.GetPresenceState()
+        fmt.Println("Current users:", state)
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    err = channel.SubscribeToEvent("presence_diff", func(message supa.Message) {
+        fmt.Println("Presence diff:", message.Payload)
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    // Connect to the Realtime server
+    err = supabase.ConnectRealtime()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Join the channel
+    err = channel.Join()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Track the user's presence
+    err = channel.Track(map[string]interface{}{
+        "user_id": "user-123",
+        "status": "online",
+        "username": "johndoe",
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    // Wait for changes
+    select {}
+}
+```
+
+### Broadcasting Messages Between Clients
+
+```go
+package main
+
+import (
+  "fmt"
+
+  supa "github.com/the-muppet/supabase-go"
+)
+
+func main() {
+    supabaseUrl := "<SUPABASE-URL>"
+    supabaseKey := "<SUPABASE-KEY>"
+    supabase := supa.CreateClient(supabaseUrl, supabaseKey)
+    
+    // Create a channel
+    channel := supabase.Channel("room:lobby")
+    
+    // Subscribe to broadcast
+    channel.SubscribeToBroadcast([]string{"message"}, supa.BroadcastConfig{
+        Self: true, // Receive your own messages
+    })
+    
+    // Subscribe to messages
+    err := channel.SubscribeToEvent("message", func(message supa.Message) {
+        fmt.Println("Received message:", message.Payload)
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    // Connect to the Realtime server
+    err = supabase.ConnectRealtime()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Join the channel
+    err = channel.Join()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Broadcast a message
+    err = channel.Broadcast("message", map[string]interface{}{
+        "text": "Hello, world!",
+        "user": "user-123",
+    })
+    
+    if err != nil {
+        panic(err)
+    }
+    
+    // Wait for changes
+    select {}
+}
+```
+
+## API Reference
+
+### Client Methods
+
+- `client.Channel(name string)` - Creates a new Realtime channel
+- `client.ChannelWithOptions(name string, options *supa.ChannelOptions)` - Creates a new channel with custom options
+- `client.ConnectRealtime()` - Establishes the WebSocket connection
+- `client.DisconnectRealtime()` - Closes the WebSocket connection
+- `client.SetRealtimeAuth(token string)` - Sets the authentication token
+- `client.GetRealtimeStatus()` - Returns the current connection status
+
+### Channel Methods
+
+- `channel.Subscribe(callback supa.EventHandler)` - Subscribes to all events on the channel
+- `channel.SubscribeToEvent(event string, callback supa.EventHandler)` - Subscribes to a specific event
+- `channel.Unsubscribe()` - Unsubscribes from the channel
+- `channel.Join()` - Joins the channel
+- `channel.Broadcast(event string, payload interface{})` - Broadcasts a message
+- `channel.Track(payload interface{})` - Tracks presence
+- `channel.Untrack()` - Untracks presence
+- `channel.GetPresenceState()` - Returns the current presence state
+- `channel.SubscribeToPostgresChanges(changes []supa.PostgresChange)` - Subscribes to PostgreSQL changes
+- `channel.SubscribeToBroadcast(events []string, opts supa.BroadcastConfig)` - Subscribes to broadcast events
+- `channel.SubscribeToPresence(key string)` - Subscribes to presence events
+- `channel.Status()` - Returns the current status of the channel
+
 ## Roadmap
 
 - [x] Auth support (1)
 - [x] DB support (2)
-- [ ] Realtime
+- [x] Realtime
 - [x] Storage
 - [ ] Testing
 
 (1) - Thin API wrapper. Does not rely on the GoTrue library for simplicity
 (2) - Through `postgrest-go`
 
-I just implemented features which I actually needed for my project for now. If you like to implement these features, feel free to submit a pull request as stated in the [Contributing](#contributing) section below.
-
 ## Design Goals
 
 It tries to mimick as much as possible the official Javascript client library in terms of ease-of-use and in setup process.
 
-# Contributing
+## Contributing
 
-## Submitting a pull request
+### Submitting a pull request
 
-- Fork it (https://github.com/nedpals/supabase-go/fork)
+- Fork it (https://github.com/the-muppet/supabase-go/fork)
 - Create your feature branch (git checkout -b my-new-feature)
 - Commit your changes (git commit -am 'Add some feature')
 - Push to the branch (git push origin my-new-feature)
 - Create a new Pull Request
 
-# Contributors
+## Contributors
 
-- [nedpals](https://github.com/nedpals) - creator and maintainer
+- [nedpals](https://github.com/nedpals) - creator and maintainer of the original repository
+- [the-muppet](https://github.com/the-muppet) - realtime fork implementation
