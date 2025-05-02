@@ -193,6 +193,18 @@ func (b *QueryRequestBuilder) ExecuteWithContext(ctx context.Context, r interfac
 	return nil
 }
 
+// ExecuteQuery executes query without needing a response object to unmarshal into.
+// (for DELETE, UPDATE, INSERT, etc.)
+func (b *QueryRequestBuilder) ExecuteQuery() error {
+	return b.ExecuteWithContext(context.Background(), nil)
+}
+
+// ExecuteQueryWithContext executes query without needing a response object to unmarshal into.
+// (for DELETE, UPDATE, INSERT, etc.)
+func (b *QueryRequestBuilder) ExecuteQueryWithContext(ctx context.Context) error {
+	return b.ExecuteWithContext(ctx, nil)
+}
+
 // FilterRequestBuilder represents a builder for filter requests.
 type FilterRequestBuilder struct {
 	QueryRequestBuilder

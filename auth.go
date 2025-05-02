@@ -105,7 +105,7 @@ func (a *Auth) SignIn(ctx context.Context, credentials UserCredentials) (*Authen
 	return &res, nil
 }
 
-// SignIn enters the user credentials and returns the current user if succeeded.
+// RefreshUser refreshes the user's token and session.
 func (a *Auth) RefreshUser(ctx context.Context, userToken string, refreshToken string) (*AuthenticatedDetails, error) {
 	reqBody, _ := json.Marshal(map[string]string{"refresh_token": refreshToken})
 	reqURL := fmt.Sprintf("%s/%s/token?grant_type=refresh_token", a.client.BaseURL, AuthEndpoint)

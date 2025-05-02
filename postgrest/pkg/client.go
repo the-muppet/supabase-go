@@ -124,13 +124,23 @@ func (r *RpcRequestBuilder) ExecuteWithContext(ctx context.Context, result inter
 		return &reqError
 	}
 
-	if resp.StatusCode != http.StatusNoContent && r != nil {
+	if resp.StatusCode != http.StatusNoContent && result != nil {
 		if err = json.Unmarshal(body, result); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// ExecuteProcedure executes the RPC call without needing a response object to unmarshal into.
+func (r *RpcRequestBuilder) ExecuteProcedure() error {
+	return r.ExecuteWithContext(context.Background(), nil)
+}
+
+// same as ExecuteProcedure but with context
+func (r *RpcRequestBuilder) ExecuteProcedureWithContext(ctx context.Context) error {
+	return r.ExecuteWithContext(ctx, nil)
 }
 
 func (c *Client) CloseIdleConnections() {
