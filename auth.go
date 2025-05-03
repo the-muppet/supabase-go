@@ -32,18 +32,24 @@ type UserCredentials struct {
 	Data     interface{}
 }
 
+type AppMetadata struct {
+	Provider  string   `json:"provider,omitempty"`
+	Providers []string `json:"providers,omitempty"`
+	Sig       string   `json:"sig,omitempty"`
+}
+
 type User struct {
-	ID                 string                    `json:"id"`
-	Aud                string                    `json:"aud"`
-	Role               string                    `json:"role"`
-	Email              string                    `json:"email"`
-	InvitedAt          time.Time                 `json:"invited_at"`
-	ConfirmedAt        time.Time                 `json:"confirmed_at"`
-	ConfirmationSentAt time.Time                 `json:"confirmation_sent_at"`
-	AppMetadata        struct{ provider string } `json:"app_metadata"`
-	UserMetadata       map[string]interface{}    `json:"user_metadata"`
-	CreatedAt          time.Time                 `json:"created_at"`
-	UpdatedAt          time.Time                 `json:"updated_at"`
+	ID                 string                 `json:"id"`
+	Aud                string                 `json:"aud"`
+	Role               string                 `json:"role"`
+	Email              string                 `json:"email"`
+	InvitedAt          time.Time              `json:"invited_at"`
+	ConfirmedAt        time.Time              `json:"confirmed_at"`
+	ConfirmationSentAt time.Time              `json:"confirmation_sent_at"`
+	AppMetadata        *AppMetadata           `json:"app_metadata,omitempty"`
+	UserMetadata       map[string]interface{} `json:"user_metadata"`
+	CreatedAt          time.Time              `json:"created_at"`
+	UpdatedAt          time.Time              `json:"updated_at"`
 }
 
 // SignUp registers the user's email and password to the database.
